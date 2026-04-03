@@ -11,14 +11,12 @@ class Statistics {
     reset() {
         this.vehiclesSpawned = 0;
         this.vehiclesCompleted = 0;
-        this.totalWaitTime = 0;
+        this.completedTimestamps = [];
         this.waitTimeHistory = [];
-        this.throughputHistory = [];
         this.queueLengthHistory = [];
         this.efficiencyHistory = [];
-        this.startTime = Date.now();
-        this.lastThroughputCheck = Date.now();
-        this.throughputCount = 0;
+        this.throughputHistory = [];
+        this.lastFrameTs = Date.now();
         this.maxHistoryLength = 60;
     }
 
@@ -28,11 +26,9 @@ class Statistics {
 
     recordVehicleComplete(waitTime) {
         this.vehiclesCompleted++;
-        this.throughputCount++;
-        this.totalWaitTime += waitTime;
+        this.completedTimestamps.push(Date.now());
         this.waitTimeHistory.push(waitTime);
 
-        // Keep history manageable
         if (this.waitTimeHistory.length > this.maxHistoryLength) {
             this.waitTimeHistory.shift();
         }
@@ -53,21 +49,9 @@ class Statistics {
 
     getThroughput() {
         const now = Date.now();
-        const elapsed = (now - this.lastThroughputCheck) / 1000;
-
-        if (elapsed >= 60) {
-            const throughput = this.throughputCount;
-            this.throughputHistory.push(throughput);
-            if (this.throughputHistory.length > this.maxHistoryLength) {
-                this.throughputHistory.shift();
-            }
-            this.throughputCount = 0;
-            this.lastThroughputCheck = now;
-            return throughput;
-        }
-
-        // Estimate based on current rate
-        return Math.round(this.throughputCoun * 60 / Math.max(elapsed, 1)));
+        const oneMinuteAgo = now - 60000;
+        this.completedTimestamps = this.completedTimestamps.filter((ts) => ts >= oneMinuteAgo);
+        return this.completedTimestamps.length;
     }
 
     getAverageQueueLength() {
@@ -77,19 +61,21 @@ class Statistics {
     }
 
     calculateEfficiency(currentVehicles, maxVehicles) {
-        // Efficiency based on multiple factors
         const avgWait = this.getAverageWaitTime();
         const avgQueue = this.getAverageQueueLength();
         const throughput = this.getThroughput();
 
-        // Normalize and weight factors
-        const waitScore = Math.max(0, 100 - (avgWait / 100));  // Lower wait = higher score
-        const queueScore = Math.max(0, 100 - (avgQueu * ));  // Shorter queue = higher score
-        const throughputScore = Math.min(100, throughpu * ); // Higher throughput = higher score
-        const densityScore = Math.max(0, 100 - (currentVehicles / maxVehicle * 00 * .5);
+        const waitScore = Math.max(0, 100 - avgWait * 8.5);
+        const queueScore = Math.max(0, 100 - avgQueue * 4.8);
+        const throughputScore = Math.min(100, throughput * 2.2);
+        const densityScore = Math.max(0, 100 - (currentVehicles / Math.max(maxVehicles, 1)) * 70);
 
-        // Weighted average
-        const efficiency = (waitScor * .3 + queueScor * .3 + throughputScor * .25 + densityScor * .15);
+        const efficiency = (
+            waitScore * 0.36 +
+            queueScore * 0.28 +
+            throughputScore * 0.24 +
+            densityScore * 0.12
+        );
 
         this.efficiencyHistory.push(efficiency);
         if (this.efficiencyHistory.length > this.maxHistoryLength) {
@@ -112,25 +98,36 @@ class Statistics {
         const insights = [];
         const avgWait = this.getAverageWaitTime();
         const avgQueue = this.getAverageQueueLength();
+        const throughput = this.getThroughput();
+        const efficiency = this.efficiencyHistory.length > 0
+            ? this.efficiencyHistory[this.efficiencyHistory.length - 1]
+            : 0;
 
-        if (avgWait > 30) {
+        if (avgWait > 10) {
             insights.push({
                 icon: '⚠️',
                 text: `High average wait time detected (${avgWait.toFixed(1)}s). Consider switching to adaptive control.`
             });
         }
 
-        if (avgQueue > 10) {
+        if (avgQueue > 12) {
             insights.push({
                 icon: '🚗',
                 text: `Queue buildup detected (${Math.round(avgQueue)} vehicles). Traffic density is high.`
             });
         }
 
+        if (throughput > 32) {
+            insights.push({
+                icon: '✅',
+                text: `Throughput is strong at ${throughput} vehicles/min over the last minute.`
+            });
+        }
+
         if (algorithm === 'qlearning' && this.vehiclesCompleted > 50) {
             insights.push({
                 icon: '🧠',
-                text: `Q-Learning has processed ${this.vehiclesCompleted} vehicles. Model is adapting to traffic patterns.`
+                text: `Q-Learning has processed ${this.vehiclesCompleted} vehicles and is refining policy from live rewards.`
             });
         }
 
@@ -148,6 +145,13 @@ class Statistics {
                     text: 'Efficiency declining. Consider adjusting spawn rate or algorithm.'
                 });
             }
+        }
+
+        if (efficiency > 82) {
+            insights.push({
+                icon: '🏆',
+                text: 'Network efficiency is excellent. Current control policy is near optimal for this scenario.'
+            });
         }
 
         return insights.length > 0 ? insights : [{

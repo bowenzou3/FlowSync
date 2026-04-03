@@ -43,6 +43,41 @@
             </div>
         </header>
 
+        <section class="architecture-banner">
+            <div class="architecture-content">
+                <div class="architecture-title-wrap">
+                    <span class="architecture-kicker">VIRTUAL HARDWARE ARCHITECTURE</span>
+                    <h2>Sensor Bus -> Controller Unit -> Signal Output Bus -> Fail-safe Layer</h2>
+                    <p>This software system emulates a real embedded traffic controller with hardware-style inputs, control logic, outputs, and safety behavior.</p>
+                </div>
+                <div class="hardware-diagram" aria-label="Virtual hardware block diagram">
+                    <div class="hardware-node sensor">
+                        <span class="node-label">Input</span>
+                        <strong>Sensor Bus</strong>
+                        <small>Lane occupancy + density channels</small>
+                    </div>
+                    <span class="hardware-arrow">-></span>
+                    <div class="hardware-node controller">
+                        <span class="node-label">Compute</span>
+                        <strong>Controller Unit</strong>
+                        <small>Fixed | Adaptive | MaxPressure | QL</small>
+                    </div>
+                    <span class="hardware-arrow">-></span>
+                    <div class="hardware-node output">
+                        <span class="node-label">Actuation</span>
+                        <strong>Signal Output Bus</strong>
+                        <small>NS/EW relay state emission</small>
+                    </div>
+                    <span class="hardware-arrow">-></span>
+                    <div class="hardware-node failsafe">
+                        <span class="node-label">Safety</span>
+                        <strong>Fail-safe Layer</strong>
+                        <small>All-red, link-loss fallback, manual override</small>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Main Content -->
         <main class="main-content">
             <!-- Control Panel -->
@@ -191,6 +226,42 @@
                         </label>
                     </div>
                 </div>
+
+                <div class="panel-section">
+                    <h3 class="section-title">
+                        <span class="icon">🛠️</span>
+                        Hardware Emulation
+                    </h3>
+                    <div class="slider-group">
+                        <label class="slider-label">
+                            <span>Sensor Bus Fault</span>
+                        </label>
+                        <select id="fault-sensor-select" class="hw-select">
+                            <option value="none">No Fault</option>
+                            <option value="north">North Sensor Offline</option>
+                            <option value="south">South Sensor Offline</option>
+                            <option value="east">East Sensor Offline</option>
+                            <option value="west">West Sensor Offline</option>
+                        </select>
+                    </div>
+                    <div class="toggle-group">
+                        <label class="toggle">
+                            <input type="checkbox" id="fault-stuck-red">
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Signal Relay Stuck Red</span>
+                        </label>
+                        <label class="toggle">
+                            <input type="checkbox" id="fault-controller-loss">
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Controller Link Loss</span>
+                        </label>
+                    </div>
+                    <div class="override-buttons">
+                        <button id="override-auto" class="btn btn-outline override-btn active">AUTO</button>
+                        <button id="override-ns" class="btn btn-outline override-btn">FORCE NS</button>
+                        <button id="override-ew" class="btn btn-outline override-btn">FORCE EW</button>
+                    </div>
+                </div>
             </aside>
 
             <!-- Simulation Canvas -->
@@ -309,6 +380,31 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="panel-section">
+                    <h3 class="section-title">
+                        <span class="icon">🧩</span>
+                        Hardware Telemetry
+                    </h3>
+                    <div class="hardware-grid">
+                        <div class="hardware-row">
+                            <span>Input Bus</span>
+                            <span id="hw-input-bus" class="hw-chip">Nominal</span>
+                        </div>
+                        <div class="hardware-row">
+                            <span>Control Bus</span>
+                            <span id="hw-control-bus" class="hw-chip">Algorithm Active</span>
+                        </div>
+                        <div class="hardware-row">
+                            <span>Output Bus</span>
+                            <span id="hw-output-bus" class="hw-chip">Signals Normal</span>
+                        </div>
+                        <div class="hardware-row">
+                            <span>Fail-safe</span>
+                            <span id="hw-failsafe" class="hw-chip">Inactive</span>
+                        </div>
+                    </div>
+                </div>
             </aside>
         </main>
 
@@ -360,19 +456,19 @@
     </div>
 
     <!-- Scripts -->
-    <script src="js/utils/Config.js"></script>
-    <script src="js/utils/Statistics.js"></script>
-    <script src="js/simulation/Vehicle.js"></script>
-    <script src="js/simulation/TrafficLight.js"></script>
-    <script src="js/simulation/Road.js"></script>
-    <script src="js/simulation/Intersection.js"></script>
-    <script src="js/algorithms/FixedTimeController.js"></script>
-    <script src="js/algorithms/AdaptiveController.js"></script>
-    <script src="js/algorithms/QLearningController.js"></script>
-    <script src="js/algorithms/MaxPressureController.js"></script>
-    <script src="js/visualization/Renderer.js"></script>
-    <script src="js/visualization/Dashboard.js"></script>
-    <script src="js/simulation/SimulationEngine.js"></script>
+    <script src="js/utils/config.js"></script>
+    <script src="js/utils/statistics.js"></script>
+    <script src="js/simulation/vehicle.js"></script>
+    <script src="js/simulation/trafficlight.js"></script>
+    <script src="js/simulation/road.js"></script>
+    <script src="js/simulation/intersection.js"></script>
+    <script src="js/algorithms/fixedtimecontroller.js"></script>
+    <script src="js/algorithms/adaptivecontroller.js"></script>
+    <script src="js/algorithms/qlearningcontroller.js"></script>
+    <script src="js/algorithms/maxpressurecontroller.js"></script>
+    <script src="js/visualization/renderer.js"></script>
+    <script src="js/visualization/dashboard.js"></script>
+    <script src="js/simulation/simulationengine.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>

@@ -158,6 +158,95 @@ body::before {
 }
 
 /* ============================================
+   VIRTUAL HARDWARE BANNER
+   ============================================ */
+.architecture-banner {
+    padding: var(--space-md) var(--space-lg) 0;
+}
+
+.architecture-content {
+    max-width: 1920px;
+    margin: 0 auto;
+    background: linear-gradient(120deg, rgba(34, 197, 94, 0.13), rgba(99, 102, 241, 0.16));
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: var(--radius-xl);
+    padding: var(--space-lg);
+    box-shadow: var(--shadow-lg);
+}
+
+.architecture-title-wrap {
+    margin-bottom: var(--space-md);
+}
+
+.architecture-kicker {
+    display: inline-block;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #86efac;
+    margin-bottom: var(--space-xs);
+}
+
+.architecture-title-wrap h2 {
+    font-size: 1.1rem;
+    margin-bottom: var(--space-xs);
+}
+
+.architecture-title-wrap p {
+    color: var(--text-secondary);
+    font-size: 0.86rem;
+}
+
+.hardware-diagram {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+    gap: var(--space-sm);
+    align-items: stretch;
+}
+
+.hardware-node {
+    background: rgba(15, 23, 42, 0.72);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm) var(--space-md);
+    min-height: 96px;
+}
+
+.hardware-node strong {
+    display: block;
+    font-size: 0.95rem;
+    margin: 0.2rem 0;
+}
+
+.hardware-node small {
+    color: var(--text-secondary);
+    line-height: 1.35;
+    font-size: 0.74rem;
+}
+
+.node-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #93c5fd;
+}
+
+.hardware-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    color: #f8fafc;
+    font-weight: 700;
+}
+
+.hardware-node.sensor { border-color: rgba(34, 197, 94, 0.55); }
+.hardware-node.controller { border-color: rgba(99, 102, 241, 0.55); }
+.hardware-node.output { border-color: rgba(56, 189, 248, 0.55); }
+.hardware-node.failsafe { border-color: rgba(239, 68, 68, 0.55); }
+
+/* ============================================
    MAIN CONTENT LAYOUT
    ============================================ */
 .main-content {
@@ -480,6 +569,29 @@ body::before {
     border-color: var(--primary);
 }
 
+.override-buttons {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-sm);
+    margin-top: var(--space-md);
+}
+
+.override-btn.active {
+    border-color: var(--warning);
+    color: var(--warning);
+    background: rgba(245, 158, 11, 0.12);
+}
+
+.hw-select {
+    width: 100%;
+    padding: var(--space-sm);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+}
+
 /* ============================================
    TOGGLES
    ============================================ */
@@ -727,6 +839,31 @@ body::before {
     gap: var(--space-md);
 }
 
+.hardware-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.hardware-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-dark);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm) var(--space-md);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.hw-chip {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    padding: 0.2rem 0.55rem;
+    color: var(--text-primary);
+    background: rgba(34, 197, 94, 0.14);
+}
+
 .signal-indicator {
     display: flex;
     justify-content: space-between;
@@ -945,6 +1082,15 @@ body::before {
         grid-template-rows: auto 1fr auto;
     }
 
+    .hardware-diagram {
+        grid-template-columns: 1fr;
+    }
+
+    .hardware-arrow {
+        transform: rotate(90deg);
+        min-height: 20px;
+    }
+
     .control-panel, .stats-panel {
         flex-direction: row;
         flex-wrap: wrap;
@@ -971,6 +1117,14 @@ body::before {
 
     .main-content {
         padding: var(--space-md);
+    }
+
+    .architecture-banner {
+        padding: var(--space-md) var(--space-md) 0;
+    }
+
+    .architecture-title-wrap h2 {
+        font-size: 0.98rem;
     }
 
     .panel-section {

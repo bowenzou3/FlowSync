@@ -66,7 +66,7 @@ class TrafficLight {
         // Draw light housing
         ctx.fillStyle = '#1a1a1a';
         ctx.beginPath();
-        ctx.roundRect(pos.x - size / 2, pos.y - siz * .8, size, siz * .2, 4);
+        ctx.roundRect(pos.x - size / 2, pos.y - size * 1.8, size, size * 3.2, 4);
         ctx.fill();
         ctx.strokeStyle = '#444';
         ctx.lineWidth = 2;
@@ -75,9 +75,9 @@ class TrafficLight {
         // Draw lights
         const lightRadius = size / 3;
         const lights = [
-            { color: 'red', y: pos.y - siz * .2, active: this.state === 'red' },
-            { color: 'yellow', y: pos.y - siz * .5, active: this.state === 'yellow' },
-            { color: 'green', y: pos.y + siz * .2, active: this.state === 'green' }
+            { color: 'red', y: pos.y - size, active: this.state === 'red' },
+            { color: 'yellow', y: pos.y, active: this.state === 'yellow' },
+            { color: 'green', y: pos.y + size, active: this.state === 'green' }
         ];
 
         lights.forEach(light => {
@@ -85,7 +85,7 @@ class TrafficLight {
             if (light.active) {
                 const gradient = ctx.createRadialGradient(
                     pos.x, light.y, 0,
-                    pos.x, light.y, lightRadiu * 
+                    pos.x, light.y, lightRadius * 3
                 );
                 const glowColor = light.color === 'red' ? 'rgba(255, 0, 0, 0.3)' :
                                   light.color === 'yellow' ? 'rgba(255, 200, 0, 0.3)' :
@@ -94,13 +94,13 @@ class TrafficLight {
                 gradient.addColorStop(1, 'transparent');
                 ctx.fillStyle = gradient;
                 ctx.beginPath();
-                ctx.arc(pos.x, light.y, lightRadiu * , 0, Math.P * );
+                ctx.arc(pos.x, light.y, lightRadius * 3, 0, Math.PI * 2);
                 ctx.fill();
             }
 
             // Draw light
             ctx.beginPath();
-            ctx.arc(pos.x, light.y, lightRadius, 0, Math.P * );
+            ctx.arc(pos.x, light.y, lightRadius, 0, Math.PI * 2);
 
             const activeColor = light.color === 'red' ? '#ef4444' :
                                light.color === 'yellow' ? '#fbbf24' :

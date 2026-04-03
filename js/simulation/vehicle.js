@@ -4,43 +4,42 @@
  */
 
 class Vehicle {
-    constructor(id, direction, lane, config) {
+    constructor(id, direction, lane, type, config) {
         this.id = id;
-        this.direction = direction;  // 'north', 'south', 'east', 'west'
-        this.lane = lane;  // 0 = right lane, 1 = left lane
+        this.direction = direction;
+        this.lane = lane;
+        this.type = type || 'car';
         this.config = config;
 
-        // Position and movement
+        const typeCfg = this.config.vehicle.types[this.type] || this.config.vehicle.types.car;
+        this.length = typeCfg.length;
+        this.width = typeCfg.width;
+
         this.x = 0;
         this.y = 0;
-        this.speed = config.vehicle.maxSpee * 0.8 + Math.random( * .2);
-        this.maxSpeed = this.speed;
+        this.maxSpeed = this.config.vehicle.maxSpeed * typeCfg.speedMultiplier;
+        this.speed = this.maxSpeed * (0.58 + Math.random() * 0.22);
         this.acceleration = config.vehicle.acceleration;
         this.deceleration = config.vehicle.deceleration;
 
-        // Dimensions
-        this.length = config.vehicle.length;
-        this.width = config.vehicle.width;
-
-        // State
         this.isWaiting = false;
         this.waitStartTime = null;
         this.totalWaitTime = 0;
         this.hasPassedIntersection = false;
-        this.isEmergency = false;
+        this.isEmergency = this.type === 'emergency';
         this.isCompleted = false;
+        this.blockedByIncident = false;
 
-        // Visual
         this.color = this.getRandomColor();
         this.angle = this.getDirectionAngle();
 
-        // Initialize position based on direction
         this.initializePosition();
     }
 
     getRandomColor() {
+        if (this.isEmergency) return this.config.vehicle.emergencyColor;
         const colors = this.config.vehicle.colors;
-        return colors[Math.floor(Math.random( * olors.length)];
+        return colors[Math.floor(Math.random() * colors.length)];
     }
 
     getDirectionAngle() {
@@ -55,65 +54,66 @@ class Vehicle {
 
     initializePosition() {
         const center = this.config.intersection;
-        const roadWidth = center.roadWidth;
         const laneWidth = center.laneWidth;
         const canvas = this.config.canvas;
 
-        // Calculate lane offset
-        const laneOffset = (this.lane === 0) ? laneWidth / 2 : -laneWidth / 2;
+        const laneOffset = this.lane === 0 ? laneWidth * 0.5 : -laneWidth * 0.5;
 
         switch (this.direction) {
             case 'north':
-                this.x = center.centerX + laneOffset;
+                this.x = center.centerX + laneOffset * 0.8;
                 this.y = canvas.height + this.length;
                 break;
             case 'south':
-                this.x = center.centerX - laneOffset;
+                this.x = center.centerX - laneOffset * 0.8;
                 this.y = -this.length;
                 break;
             case 'east':
                 this.x = -this.length;
-                this.y = center.centerY + laneOffset;
+                this.y = center.centerY + laneOffset * 0.8;
                 break;
             case 'west':
                 this.x = canvas.width + this.length;
-                this.y = center.centerY - laneOffset;
+                this.y = center.centerY - laneOffset * 0.8;
                 break;
         }
     }
 
-    update(trafficLight, vehicleAhead, deltaTime) {
-        const lightState = trafficLight.getState(this.direction);
-        const center = this.config.intersection;
-        const stopLine = this.getStopLinePosition();
-        const distanceToStop = this.getDistanceToStopLine(stopLine);
+    update(context, deltaSeconds) {
+        const lightState = context.lightState;
+        const stopDistance = context.stopDistance;
+        const vehicleAhead = context.vehicleAhead;
+        const isLaneBlocked = context.isLaneBlocked;
 
-        // Check if we need to stop
         let shouldStop = false;
+        let targetSpeed = this.maxSpeed;
 
-        // Check traffic light
         if (!this.hasPassedIntersection) {
-            if (lightState === 'red' && distanceToStop > 0 && distanceToStop < this.config.simulation.sensorRange) {
+            if (lightState === 'red' && stopDistance > 0 && stopDistance < this.config.simulation.sensorRange) {
                 shouldStop = true;
-            } else if (lightState === 'yellow' && distanceToStop > this.config.vehicle.safeDistanc * .5) {
+            } else if (lightState === 'yellow' && stopDistance > this.config.vehicle.safeDistance * 0.45) {
                 shouldStop = true;
             }
         }
 
-        // Check vehicle ahead
         if (vehicleAhead && !vehicleAhead.isCompleted) {
             const distance = this.getDistanceToVehicle(vehicleAhead);
-            if (distance < this.config.vehicle.safeDistance) {
+            if (distance < this.config.vehicle.minGapAtStop) {
                 shouldStop = true;
-            } else if (distance < this.config.vehicle.safeDistanc * .5) {
-                // Slow down
-                this.speed = Math.max(this.speed - this.deceleratio * .5, vehicleAhead.speed);
+            } else if (distance < this.config.vehicle.safeDistance) {
+                targetSpeed = Math.min(targetSpeed, Math.max(0, vehicleAhead.speed - 4));
             }
         }
 
-        // Update speed
+        if (isLaneBlocked && stopDistance > 0 && stopDistance < 105) {
+            shouldStop = true;
+            this.blockedByIncident = true;
+        } else {
+            this.blockedByIncident = false;
+        }
+
         if (shouldStop) {
-            this.speed = Math.max(0, this.speed - this.deceleration);
+            this.speed = Math.max(0, this.speed - this.deceleration * deltaSeconds);
             if (this.speed === 0 && !this.isWaiting) {
                 this.isWaiting = true;
                 this.waitStartTime = Date.now();
@@ -122,35 +122,39 @@ class Vehicle {
             if (this.isWaiting) {
                 this.totalWaitTime += (Date.now() - this.waitStartTime);
                 this.isWaiting = false;
+                this.waitStartTime = null;
             }
-            this.speed = Math.min(this.maxSpeed, this.speed + this.acceleration);
+
+            if (this.speed < targetSpeed) {
+                this.speed = Math.min(targetSpeed, this.speed + this.acceleration * deltaSeconds);
+            } else {
+                this.speed = Math.max(targetSpeed, this.speed - this.deceleration * 0.35 * deltaSeconds);
+            }
         }
 
-        // Update position
-        this.move();
+        this.move(deltaSeconds);
 
-        // Check if passed intersection
-        if (!this.hasPassedIntersection && distanceToStop < -this.length) {
+        if (!this.hasPassedIntersection && stopDistance < -this.length) {
             this.hasPassedIntersection = true;
         }
 
-        // Check if completed (off screen)
         this.checkCompletion();
     }
 
-    move() {
+    move(deltaSeconds) {
+        const distance = this.speed * deltaSeconds;
         switch (this.direction) {
             case 'north':
-                this.y -= this.speed;
+                this.y -= distance;
                 break;
             case 'south':
-                this.y += this.speed;
+                this.y += distance;
                 break;
             case 'east':
-                this.x += this.speed;
+                this.x += distance;
                 break;
             case 'west':
-                this.x -= this.speed;
+                this.x -= distance;
                 break;
         }
     }
@@ -188,18 +192,20 @@ class Vehicle {
     getDistanceToVehicle(other) {
         const dx = other.x - this.x;
         const dy = other.y - this.y;
-        return Math.sqrt(d * x + d * y) - (this.length / 2 + other.length / 2);
+        return Math.sqrt(dx * dx + dy * dy) - (this.length / 2 + other.length / 2);
     }
 
     checkCompletion() {
         const canvas = this.config.canvas;
-        const buffer = this.lengt * ;
+        const buffer = this.length * 3;
 
         if (this.x < -buffer || this.x > canvas.width + buffer ||
             this.y < -buffer || this.y > canvas.height + buffer) {
             this.isCompleted = true;
             if (this.isWaiting) {
                 this.totalWaitTime += (Date.now() - this.waitStartTime);
+                this.isWaiting = false;
+                this.waitStartTime = null;
             }
         }
     }
@@ -219,6 +225,12 @@ class Vehicle {
         ctx.roundRect(-this.length / 2, -this.width / 2, this.length, this.width, 3);
         ctx.fill();
 
+        if (this.blockedByIncident) {
+            ctx.strokeStyle = '#f59e0b';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(-this.length / 2, -this.width / 2, this.length, this.width);
+        }
+
         // Draw windshield
         ctx.fillStyle = 'rgba(135, 206, 250, 0.7)';
         ctx.fillRect(this.length / 2 - 12, -this.width / 2 + 2, 8, this.width - 4);
@@ -226,16 +238,16 @@ class Vehicle {
         // Draw headlights
         ctx.fillStyle = this.speed > 0 ? '#ffeb3b' : '#888';
         ctx.beginPath();
-        ctx.arc(this.length / 2 - 2, -this.width / 3, 2, 0, Math.P * );
-        ctx.arc(this.length / 2 - 2, this.width / 3, 2, 0, Math.P * );
+        ctx.arc(this.length / 2 - 2, -this.width / 3, 2, 0, Math.PI * 2);
+        ctx.arc(this.length / 2 - 2, this.width / 3, 2, 0, Math.PI * 2);
         ctx.fill();
 
         // Draw brake lights (when stopped)
         if (this.speed === 0) {
             ctx.fillStyle = '#ff0000';
             ctx.beginPath();
-            ctx.arc(-this.length / 2 + 2, -this.width / 3, 2, 0, Math.P * );
-            ctx.arc(-this.length / 2 + 2, this.width / 3, 2, 0, Math.P * );
+            ctx.arc(-this.length / 2 + 2, -this.width / 3, 2, 0, Math.PI * 2);
+            ctx.arc(-this.length / 2 + 2, this.width / 3, 2, 0, Math.PI * 2);
             ctx.fill();
         }
 
